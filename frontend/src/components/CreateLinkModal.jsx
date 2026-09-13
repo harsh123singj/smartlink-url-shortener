@@ -2,6 +2,8 @@ import { Copy, Link2, X } from "lucide-react";
 import { useState } from "react";
 import { useUrls } from "../context/UrlContext.jsx";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const CreateLinkModal = ({ onClose }) => {
     const { createUrl } = useUrls();
 
@@ -35,9 +37,7 @@ const CreateLinkModal = ({ onClose }) => {
 
             setCreatedUrl(data.url);
         } catch (err) {
-            setError(
-                err.message || "Failed to create link."
-            );
+            setError(err.message || "Failed to create link.");
         } finally {
             setLoading(false);
         }
@@ -48,17 +48,18 @@ const CreateLinkModal = ({ onClose }) => {
             return "";
         }
 
+        // Backend API is /api, but short URLs use the backend root
+        const backendUrl = API_URL.replace(/\/api\/?$/, "");
+
         return (
             createdUrl.shortUrl ||
-            `http://localhost:5000/${createdUrl.shortCode}`
+            `${backendUrl}/${createdUrl.shortCode}`
         );
     };
 
     const handleCopy = async () => {
         try {
-            await navigator.clipboard.writeText(
-                getShortUrl()
-            );
+            await navigator.clipboard.writeText(getShortUrl());
 
             setCopied(true);
 
@@ -83,12 +84,9 @@ const CreateLinkModal = ({ onClose }) => {
                 className="w-full max-w-lg rounded-2xl bg-white shadow-xl"
                 onMouseDown={(e) => e.stopPropagation()}
             >
-
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-black/10 px-5 py-4">
-
                     <div className="flex items-center gap-3">
-
                         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50">
                             <Link2 className="h-5 w-5 text-[#FF5A1F]" />
                         </div>
@@ -102,7 +100,6 @@ const CreateLinkModal = ({ onClose }) => {
                                 Create a new short URL
                             </p>
                         </div>
-
                     </div>
 
                     <button
@@ -112,16 +109,12 @@ const CreateLinkModal = ({ onClose }) => {
                     >
                         <X className="h-5 w-5" />
                     </button>
-
                 </div>
 
                 {/* Success */}
                 {createdUrl ? (
-
                     <div className="px-5 py-6">
-
                         <div className="rounded-xl border border-green-200 bg-green-50 p-4">
-
                             <p className="text-sm font-semibold text-green-700">
                                 Link created successfully!
                             </p>
@@ -129,17 +122,14 @@ const CreateLinkModal = ({ onClose }) => {
                             <p className="mt-1 text-xs text-green-600">
                                 Your short URL is ready to use.
                             </p>
-
                         </div>
 
                         <div className="mt-5">
-
                             <label className="mb-2 block text-sm font-medium text-[#171717]">
                                 Short URL
                             </label>
 
                             <div className="flex gap-2">
-
                                 <input
                                     type="text"
                                     value={getShortUrl()}
@@ -154,17 +144,12 @@ const CreateLinkModal = ({ onClose }) => {
                                 >
                                     <Copy className="h-4 w-4" />
 
-                                    {copied
-                                        ? "Copied"
-                                        : "Copy"}
+                                    {copied ? "Copied" : "Copy"}
                                 </button>
-
                             </div>
-
                         </div>
 
                         <div className="mt-6 flex justify-end">
-
                             <button
                                 type="button"
                                 onClick={onClose}
@@ -172,19 +157,14 @@ const CreateLinkModal = ({ onClose }) => {
                             >
                                 Done
                             </button>
-
                         </div>
-
                     </div>
-
                 ) : (
-
                     /* Form */
                     <form
                         onSubmit={handleSubmit}
                         className="px-5 py-6"
                     >
-
                         {/* Error */}
                         {error && (
                             <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -194,7 +174,6 @@ const CreateLinkModal = ({ onClose }) => {
 
                         {/* Destination URL */}
                         <div>
-
                             <label
                                 htmlFor="originalUrl"
                                 className="mb-2 block text-sm font-medium text-[#171717]"
@@ -207,20 +186,16 @@ const CreateLinkModal = ({ onClose }) => {
                                 type="url"
                                 value={originalUrl}
                                 onChange={(e) =>
-                                    setOriginalUrl(
-                                        e.target.value
-                                    )
+                                    setOriginalUrl(e.target.value)
                                 }
                                 placeholder="https://example.com"
                                 disabled={loading}
                                 className="w-full rounded-lg border border-black/10 px-3 py-2.5 text-sm outline-none placeholder:text-gray-400 focus:border-[#FF5A1F] focus:ring-2 focus:ring-orange-100"
                             />
-
                         </div>
 
                         {/* Custom Alias */}
                         <div className="mt-5">
-
                             <label
                                 htmlFor="customAlias"
                                 className="mb-2 block text-sm font-medium text-[#171717]"
@@ -232,7 +207,6 @@ const CreateLinkModal = ({ onClose }) => {
                             </label>
 
                             <div className="flex items-center rounded-lg border border-black/10 focus-within:border-[#FF5A1F]">
-
                                 <span className="border-r border-black/10 px-3 text-sm text-gray-400">
                                     /
                                 </span>
@@ -242,22 +216,17 @@ const CreateLinkModal = ({ onClose }) => {
                                     type="text"
                                     value={customAlias}
                                     onChange={(e) =>
-                                        setCustomAlias(
-                                            e.target.value
-                                        )
+                                        setCustomAlias(e.target.value)
                                     }
                                     placeholder="my-link"
                                     disabled={loading}
                                     className="min-w-0 flex-1 px-3 py-2.5 text-sm outline-none"
                                 />
-
                             </div>
-
                         </div>
 
                         {/* Expiration */}
                         <div className="mt-5">
-
                             <label
                                 htmlFor="expiresAt"
                                 className="mb-2 block text-sm font-medium text-[#171717]"
@@ -273,19 +242,15 @@ const CreateLinkModal = ({ onClose }) => {
                                 type="datetime-local"
                                 value={expiresAt}
                                 onChange={(e) =>
-                                    setExpiresAt(
-                                        e.target.value
-                                    )
+                                    setExpiresAt(e.target.value)
                                 }
                                 disabled={loading}
                                 className="w-full rounded-lg border border-black/10 px-3 py-2.5 text-sm outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-orange-100"
                             />
-
                         </div>
 
                         {/* Buttons */}
                         <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
                             <button
                                 type="button"
                                 onClick={onClose}
@@ -312,12 +277,9 @@ const CreateLinkModal = ({ onClose }) => {
                                     </>
                                 )}
                             </button>
-
                         </div>
-
                     </form>
                 )}
-
             </div>
         </div>
     );

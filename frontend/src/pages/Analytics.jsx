@@ -21,6 +21,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useUrls } from "../context/UrlContext";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const Analytics = () => {
     const { token } = useAuth();
     const { urls } = useUrls();
@@ -42,9 +44,7 @@ const Analytics = () => {
                     (url) => url._id === currentId
                 );
 
-                return exists
-                    ? currentId
-                    : urls[0]._id;
+                return exists ? currentId : urls[0]._id;
             });
         } else {
             setSelectedUrlId("");
@@ -67,7 +67,7 @@ const Analytics = () => {
                 setError("");
 
                 const response = await fetch(
-                    `http://localhost:5000/api/analytics/${selectedUrlId}`,
+                    `${API_URL}/analytics/${selectedUrlId}`,
                     {
                         method: "GET",
                         headers: {
@@ -80,26 +80,18 @@ const Analytics = () => {
 
                 if (!response.ok) {
                     throw new Error(
-                        data.message ||
-                            "Failed to fetch analytics"
+                        data.message || "Failed to fetch analytics"
                     );
                 }
 
-                console.log(
-                    "Analytics API response:",
-                    data
-                );
+                console.log("Analytics API response:", data);
 
                 setAnalyticsData(data);
             } catch (err) {
-                console.error(
-                    "Analytics fetch error:",
-                    err
-                );
+                console.error("Analytics fetch error:", err);
 
                 setError(
-                    err.message ||
-                        "Failed to fetch analytics"
+                    err.message || "Failed to fetch analytics"
                 );
 
                 setAnalyticsData(null);
@@ -119,8 +111,7 @@ const Analytics = () => {
 
     const analytics = analyticsData?.analytics;
 
-    const totalClicks =
-        analytics?.totalClicks ?? 0;
+    const totalClicks = analytics?.totalClicks ?? 0;
 
     /*
      * clicksByDay is currently returned
@@ -131,8 +122,7 @@ const Analytics = () => {
      * }
      */
 
-    const clicksByDay =
-        analytics?.clicksByDay || {};
+    const clicksByDay = analytics?.clicksByDay || {};
 
     const chartData = useMemo(() => {
         if (!clicksByDay) {
@@ -168,7 +158,7 @@ const Analytics = () => {
      * as an object:
      *
      * {
-     *   "Direct": 5,
+     *   "Direct": 5
      *   "Google": 2
      * }
      */
@@ -228,6 +218,7 @@ const Analytics = () => {
                 </div>
 
                 {/* URL Selector */}
+
                 <div className="w-full sm:w-72">
 
                     <label
@@ -241,9 +232,7 @@ const Analytics = () => {
                         id="analytics-url"
                         value={selectedUrlId}
                         onChange={(e) =>
-                            setSelectedUrlId(
-                                e.target.value
-                            )
+                            setSelectedUrlId(e.target.value)
                         }
                         disabled={urls.length === 0}
                         className="w-full rounded-lg border border-black/10 bg-white px-3 py-2.5 text-sm text-[#171717] outline-none transition focus:border-[#FF5A1F] focus:ring-2 focus:ring-orange-100 disabled:bg-gray-50"
@@ -325,6 +314,7 @@ const Analytics = () => {
                 <div className="mt-8 space-y-6">
 
                     {/* Selected URL */}
+
                     <div className="flex flex-col gap-4 rounded-xl border border-black/10 bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
 
                         <div className="flex min-w-0 items-center gap-3">
@@ -657,7 +647,6 @@ const Analytics = () => {
     );
 };
 
-
 /* =================================
    Stat Card
 ================================= */
@@ -686,7 +675,6 @@ const StatCard = ({
     );
 };
 
-
 /* =================================
    Empty State
 ================================= */
@@ -698,7 +686,6 @@ const EmptyState = ({ text }) => {
         </div>
     );
 };
-
 
 /* =================================
    Helpers

@@ -13,6 +13,8 @@ import {
 import { useMemo, useState } from "react";
 import { useUrls } from "../context/UrlContext";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const Links = () => {
     const {
         urls,
@@ -45,12 +47,19 @@ const Links = () => {
     }, [urls, search]);
 
     const getShortUrl = (url) => {
-        return `http://localhost:5000/${url.shortCode}`;
+        const backendUrl = API_URL.replace(/\/api\/?$/, "");
+
+        return (
+            url.shortUrl ||
+            `${backendUrl}/${url.shortCode}`
+        );
     };
 
     const handleCopy = async (url) => {
         try {
-            await navigator.clipboard.writeText(getShortUrl(url));
+            await navigator.clipboard.writeText(
+                getShortUrl(url)
+            );
 
             setCopiedId(url._id);
 
@@ -146,7 +155,9 @@ const Links = () => {
                     <input
                         type="text"
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                        onChange={(e) =>
+                            setSearch(e.target.value)
+                        }
                         placeholder="Search links..."
                         className="w-full rounded-lg border border-black/10 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition placeholder:text-gray-400 focus:border-[#FF5A1F] focus:ring-2 focus:ring-orange-100"
                     />
@@ -213,7 +224,8 @@ const Links = () => {
                         {filteredUrls.map((url) => {
 
                             const expired = isExpired(url);
-                            const busy = actionLoading === url._id;
+                            const busy =
+                                actionLoading === url._id;
 
                             return (
                                 <div
@@ -248,7 +260,8 @@ const Links = () => {
                                                     className="shrink-0 rounded-md p-1.5 text-gray-400 transition hover:bg-orange-50 hover:text-[#FF5A1F]"
                                                     title="Copy short URL"
                                                 >
-                                                    {copiedId === url._id ? (
+                                                    {copiedId ===
+                                                    url._id ? (
                                                         <Check className="h-4 w-4 text-green-500" />
                                                     ) : (
                                                         <Copy className="h-4 w-4" />
@@ -316,7 +329,8 @@ const Links = () => {
                                                 type="button"
                                                 onClick={() =>
                                                     setOpenMenu(
-                                                        openMenu === url._id
+                                                        openMenu ===
+                                                            url._id
                                                             ? null
                                                             : url._id
                                                     )
@@ -327,14 +341,19 @@ const Links = () => {
                                                 <MoreVertical className="h-4 w-4" />
                                             </button>
 
-                                            {openMenu === url._id && (
+                                            {openMenu ===
+                                                url._id && (
                                                 <ActionMenu
                                                     url={url}
                                                     onToggle={() =>
-                                                        handleToggle(url)
+                                                        handleToggle(
+                                                            url
+                                                        )
                                                     }
                                                     onDelete={() =>
-                                                        handleDelete(url)
+                                                        handleDelete(
+                                                            url
+                                                        )
                                                     }
                                                 />
                                             )}
@@ -355,7 +374,9 @@ const Links = () => {
                                                     <Link2 className="h-4 w-4 shrink-0 text-[#FF5A1F]" />
 
                                                     <a
-                                                        href={getShortUrl(url)}
+                                                        href={getShortUrl(
+                                                            url
+                                                        )}
                                                         target="_blank"
                                                         rel="noreferrer"
                                                         className="truncate text-sm font-semibold text-[#FF5A1F]"
@@ -377,7 +398,8 @@ const Links = () => {
                                                     type="button"
                                                     onClick={() =>
                                                         setOpenMenu(
-                                                            openMenu === url._id
+                                                            openMenu ===
+                                                                url._id
                                                                 ? null
                                                                 : url._id
                                                         )
@@ -388,14 +410,19 @@ const Links = () => {
                                                     <MoreVertical className="h-4 w-4" />
                                                 </button>
 
-                                                {openMenu === url._id && (
+                                                {openMenu ===
+                                                    url._id && (
                                                     <ActionMenu
                                                         url={url}
                                                         onToggle={() =>
-                                                            handleToggle(url)
+                                                            handleToggle(
+                                                                url
+                                                            )
                                                         }
                                                         onDelete={() =>
-                                                            handleDelete(url)
+                                                            handleDelete(
+                                                                url
+                                                            )
                                                         }
                                                     />
                                                 )}
@@ -425,7 +452,8 @@ const Links = () => {
                                                 </span>
 
                                                 <span className="text-xs text-gray-400">
-                                                    {url.clicks || 0} clicks
+                                                    {url.clicks || 0}{" "}
+                                                    clicks
                                                 </span>
 
                                             </div>
@@ -437,7 +465,8 @@ const Links = () => {
                                                 }
                                                 className="inline-flex items-center gap-1.5 rounded-lg border border-black/10 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
                                             >
-                                                {copiedId === url._id ? (
+                                                {copiedId ===
+                                                url._id ? (
                                                     <>
                                                         <Check className="h-3.5 w-3.5 text-green-500" />
                                                         Copied
@@ -466,14 +495,14 @@ const Links = () => {
             {/* Result Count */}
             {!loading && filteredUrls.length > 0 && (
                 <p className="mt-4 text-xs text-gray-400">
-                    Showing {filteredUrls.length} of {urls.length} links
+                    Showing {filteredUrls.length} of{" "}
+                    {urls.length} links
                 </p>
             )}
 
         </div>
     );
 };
-
 
 /* =================================
    Action Menu
@@ -484,11 +513,13 @@ const ActionMenu = ({
     onToggle,
     onDelete,
 }) => {
+    const backendUrl = API_URL.replace(/\/api\/?$/, "");
+
     return (
         <div className="absolute right-0 top-10 z-30 w-44 rounded-xl border border-black/10 bg-white p-1.5 shadow-lg">
 
             <a
-                href={`http://localhost:5000/${url.shortCode}`}
+                href={`${backendUrl}/${url.shortCode}`}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
