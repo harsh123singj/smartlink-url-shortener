@@ -1,6 +1,101 @@
-import { ArrowRight, Check, Copy, Link2 } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Copy,
+  Link2,
+  Loader2,
+} from "lucide-react";
+
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { useAuth } from "../context/AuthContext";
+import { useUrls } from "../context/UrlContext";
 
 const Hero = () => {
+  const navigate = useNavigate();
+
+  const { isAuthenticated } = useAuth();
+  const { createUrl } = useUrls();
+
+  const [originalUrl, setOriginalUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [createdUrl, setCreatedUrl] = useState("");
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  const backendUrl = API_URL
+    ? API_URL.replace(/\/api\/?$/, "")
+    : "";
+
+  const handleShorten = async () => {
+    setError("");
+    setCreatedUrl("");
+
+    const trimmedUrl = originalUrl.trim();
+
+    if (!trimmedUrl) {
+      setError("Please enter a URL.");
+      return;
+    }
+
+    try {
+      new URL(trimmedUrl);
+    } catch {
+      setError("Please enter a valid URL.");
+      return;
+    }
+
+    // User needs to be logged in to create a link
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const data = await createUrl({
+        originalUrl: trimmedUrl,
+        customAlias: "",
+        expiresAt: "",
+      });
+
+      const shortUrl =
+        data?.url?.shortUrl ||
+        `${backendUrl}/${data?.url?.shortCode}`;
+
+      setCreatedUrl(shortUrl);
+      setOriginalUrl("");
+    } catch (err) {
+      setError(
+        err.message || "Failed to create short link."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    if (!createdUrl) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(createdUrl);
+
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch {
+      setError("Failed to copy the short URL.");
+    }
+  };
+
   return (
     <section className="px-6 pb-20 pt-20 lg:px-8 lg:pb-28 lg:pt-28">
       <div className="mx-auto max-w-7xl">
@@ -28,37 +123,113 @@ const Hero = () => {
 
           {/* URL Input */}
           <div className="mx-auto mt-10 max-w-2xl">
+
             <div className="flex flex-col gap-3 rounded-xl border border-black/10 bg-white p-2 shadow-sm sm:flex-row">
 
               <div className="flex flex-1 items-center gap-3 px-3">
+
                 <Link2 className="h-5 w-5 shrink-0 text-gray-400" />
 
                 <input
                   type="url"
+                  value={originalUrl}
+                  onChange={(e) => {
+                    setOriginalUrl(e.target.value);
+                    setError("");
+                    setCreatedUrl("");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleShorten();
+                    }
+                  }}
                   placeholder="Paste your long URL here..."
-                  className="w-full bg-transparent py-3 text-sm text-[#171717] outline-none placeholder:text-gray-400"
+                  disabled={loading}
+                  className="w-full bg-transparent py-3 text-sm text-[#171717] outline-none placeholder:text-gray-400 disabled:opacity-60"
                 />
+
               </div>
 
-              <button className="flex items-center justify-center gap-2 rounded-lg bg-[#FF5A1F] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#E94D16]">
-                Shorten URL
-                <ArrowRight className="h-4 w-4" />
+              <button
+                type="button"
+                onClick={handleShorten}
+                disabled={loading}
+                className="flex items-center justify-center gap-2 rounded-lg bg-[#FF5A1F] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#E94D16] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Shortening...
+                  </>
+                ) : (
+                  <>
+                    Shorten URL
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
               </button>
 
             </div>
 
+            {/* Error */}
+            {error && (
+              <p className="mt-3 text-sm text-red-500">
+                {error}
+              </p>
+            )}
+
+            {/* Created URL */}
+            {createdUrl && (
+              <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-3">
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+
+                  <div className="min-w-0 flex-1 text-left">
+
+                    <p className="text-xs font-medium text-green-700">
+                      Your short link is ready
+                    </p>
+
+                    <a
+                      href={createdUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 block truncate text-sm font-semibold text-[#FF5A1F] hover:underline"
+                    >
+                      {createdUrl}
+                    </a>
+
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#FF5A1F] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#E94D16]"
+                  >
+                    <Copy className="h-4 w-4" />
+                    {copied ? "Copied" : "Copy"}
+                  </button>
+
+                </div>
+
+              </div>
+            )}
+
             <p className="mt-3 text-sm text-gray-500">
               Free to use · No credit card required
             </p>
+
           </div>
         </div>
 
         {/* Product Preview */}
         <div className="mx-auto mt-20 max-w-5xl">
+
           <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl">
 
             {/* Browser Header */}
             <div className="flex items-center gap-2 border-b border-black/5 px-5 py-4">
+
               <span className="h-3 w-3 rounded-full bg-red-300" />
               <span className="h-3 w-3 rounded-full bg-yellow-300" />
               <span className="h-3 w-3 rounded-full bg-green-300" />
@@ -66,6 +237,7 @@ const Hero = () => {
               <div className="ml-4 flex-1 rounded-md bg-gray-100 px-4 py-2 text-xs text-gray-500">
                 app.smartlink.com/dashboard
               </div>
+
             </div>
 
             {/* Dashboard Preview */}
@@ -75,6 +247,7 @@ const Hero = () => {
               <div className="hidden w-48 border-r border-black/5 bg-[#252525] p-5 sm:block">
 
                 <div className="mb-8 flex items-center gap-2">
+
                   <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#FF5A1F]">
                     <Link2 className="h-4 w-4 text-white" />
                   </div>
@@ -82,9 +255,11 @@ const Hero = () => {
                   <span className="text-sm font-semibold text-white">
                     SmartLink
                   </span>
+
                 </div>
 
                 <div className="space-y-2">
+
                   <div className="rounded-md bg-white/10 px-3 py-2 text-xs font-medium text-white">
                     Dashboard
                   </div>
@@ -96,14 +271,18 @@ const Hero = () => {
                   <div className="px-3 py-2 text-xs text-gray-400">
                     Analytics
                   </div>
+
                 </div>
+
               </div>
 
               {/* Preview Content */}
               <div className="flex-1 bg-[#FAF9F6] p-6 sm:p-8">
 
                 <div className="flex items-center justify-between">
+
                   <div>
+
                     <p className="text-xs text-gray-500">
                       Dashboard
                     </p>
@@ -111,41 +290,52 @@ const Hero = () => {
                     <h3 className="mt-1 text-lg font-bold text-[#171717]">
                       Your links
                     </h3>
+
                   </div>
 
                   <button className="rounded-md bg-[#FF5A1F] px-3 py-2 text-xs font-semibold text-white">
                     + Create link
                   </button>
+
                 </div>
 
                 {/* Stats */}
                 <div className="mt-6 grid grid-cols-3 gap-3">
 
                   <div className="rounded-lg border border-black/5 bg-white p-4">
+
                     <p className="text-xs text-gray-500">
                       Total links
                     </p>
+
                     <p className="mt-2 text-xl font-bold text-[#171717]">
                       24
                     </p>
+
                   </div>
 
                   <div className="rounded-lg border border-black/5 bg-white p-4">
+
                     <p className="text-xs text-gray-500">
                       Total clicks
                     </p>
+
                     <p className="mt-2 text-xl font-bold text-[#171717]">
                       1,284
                     </p>
+
                   </div>
 
                   <div className="rounded-lg border border-black/5 bg-white p-4">
+
                     <p className="text-xs text-gray-500">
                       Active links
                     </p>
+
                     <p className="mt-2 text-xl font-bold text-[#171717]">
                       21
                     </p>
+
                   </div>
 
                 </div>
@@ -160,33 +350,43 @@ const Hero = () => {
                   <div className="divide-y divide-black/5">
 
                     <div className="flex items-center justify-between px-4 py-3">
+
                       <div>
+
                         <p className="text-xs font-semibold text-[#171717]">
                           smartlink.app/github
                         </p>
+
                         <p className="mt-1 text-[11px] text-gray-400">
                           github.com/harsh...
                         </p>
+
                       </div>
 
                       <span className="text-xs font-semibold text-[#FF5A1F]">
                         245 clicks
                       </span>
+
                     </div>
 
                     <div className="flex items-center justify-between px-4 py-3">
+
                       <div>
+
                         <p className="text-xs font-semibold text-[#171717]">
                           smartlink.app/portfolio
                         </p>
+
                         <p className="mt-1 text-[11px] text-gray-400">
                           portfolio.example...
                         </p>
+
                       </div>
 
                       <span className="text-xs font-semibold text-[#FF5A1F]">
                         128 clicks
                       </span>
+
                     </div>
 
                   </div>
@@ -195,6 +395,7 @@ const Hero = () => {
 
               </div>
             </div>
+
           </div>
         </div>
 
